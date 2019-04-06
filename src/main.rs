@@ -5,9 +5,9 @@ use std::io::Read;
 
 mod diff;
 
-fn json_in_file(file: &String) -> Value {
+fn json_in_file(file: &str) -> Value {
     let mut buffer = Vec::new();
-    File::open(file).and_then(|mut f| f.read_to_end(&mut buffer));
+    File::open(file).and_then(|mut f| f.read_to_end(&mut buffer)).expect(&format!("Could not read {}", &file));
 
     serde_json::from_slice(buffer.as_slice()).expect("Could not read JSON from file")
 }
