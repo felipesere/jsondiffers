@@ -9,10 +9,10 @@ pub enum Difference {
 }
 
 impl Difference {
-    fn change(original: Value, modified: Value) -> Difference {
+    fn change(original_value: Value, modified_value: Value) -> Difference {
         Difference::Changed(SlightMutation {
-            original_value: original,
-            modified_value: modified,
+            original_value,
+            modified_value,
         })
     }
 }
@@ -48,7 +48,6 @@ fn primitive_difference(n: Value, m: Value) -> Vec<Difference> {
         Vec::new()
     }
 }
-
 
 pub fn object_difference(
     mut left: Map<String, Value>,
@@ -128,10 +127,7 @@ mod tests {
 
         let difference = calculate(left_value, right_value);
 
-        assert_eq!(
-            vec!(Difference::change(json!(1), json!(2))),
-            difference
-        )
+        assert_eq!(vec!(Difference::change(json!(1), json!(2))), difference)
     }
 
     #[test]
