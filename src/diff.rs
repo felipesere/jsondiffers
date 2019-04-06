@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use serde_json::{Map, Value};
+use serde_json::{Map, Value, Number};
 use std::collections::HashSet;
 
 #[derive(Debug, PartialEq)]
@@ -19,16 +19,7 @@ pub struct SlightMutation {
 pub fn calculate(left: Value, right: Value) -> Vec<Difference> {
     match (left, right) {
         (Value::Object(l), Value::Object(r)) => object_difference(l, r),
-        (Value::Number(m), Value::Number(n)) => {
-            if m == n {
-                Vec::new()
-            } else {
-                vec![Difference::Changed(SlightMutation {
-                    original_value: Value::Number(m),
-                    modified_value: Value::Number(n),
-                })]
-            }
-        }
+        (Value::Number(n), Value::Number(m)) => number_difference(n, m),
         (Value::Array(left_vals), Value::Array(right_vals)) => {
             array_difference(left_vals, right_vals)
         }
@@ -36,13 +27,6 @@ pub fn calculate(left: Value, right: Value) -> Vec<Difference> {
         (a, b) => vec!(Difference::Changed(SlightMutation{original_value: a, modified_value: b})),
         _ => Vec::new(),
     }
-}
-
-fn compare_numbers(n: &serde_json::Number, m: &serde_json::Number) -> Ordering {
-    n.as_f64()
-        .unwrap()
-        .partial_cmp(&m.as_f64().unwrap())
-        .unwrap()
 }
 
 fn type_difference(left: Value, right: Value) -> Vec<Difference> {
@@ -59,6 +43,18 @@ fn string_differences(n: String, m: String) -> Vec<Difference> {
         Vec::new()
     }
 }
+
+fn number_difference(n: Number, m: Number) -> Vec<Difference> {
+    if n != m {
+        vec![Difference::Changed(SlightMutation {
+            original_value: Value::Number(n),
+            modified_value: Value::Number(m),
+        })]
+    } else {
+        Vec::new()
+    }
+}
+
 
 pub fn object_difference(
     mut left: Map<String, Value>,
