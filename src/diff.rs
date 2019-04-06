@@ -17,38 +17,28 @@ pub struct SlightMutation {
 }
 
 pub fn calculate(left: Value, right: Value) -> Vec<Difference> {
+    use Value::*;
+
     match (left, right) {
-        (Value::Object(l), Value::Object(r)) => object_difference(l, r),
-        (Value::Number(n), Value::Number(m)) => number_difference(n, m),
-        (Value::Array(left_vals), Value::Array(right_vals)) => {
-            array_difference(left_vals, right_vals)
-        }
-        (Value::String(a), Value::String(b)) => string_differences(a, b),
-        (a, b) => vec!(Difference::Changed(SlightMutation{original_value: a, modified_value: b})),
-        _ => Vec::new(),
+        (Null, Null) => Vec::new(),
+        (n @ Bool(_), m @ Bool(_)) => primitive_difference(n, m),
+        (n @ Number(_), m @ Number(_)) => primitive_difference(n, m),
+        (n @ String(_), m @ String(_)) => primitive_difference(n, m),
+        (Object(l), Object(r)) => object_difference(l, r),
+        (Array(l), Array(r)) => array_difference(l, r),
+        (a, b) => type_difference(a, b),
     }
 }
 
-fn type_difference(left: Value, right: Value) -> Vec<Difference> {
-    Vec::new()
+fn type_difference(a: Value, b: Value) -> Vec<Difference> {
+    vec!(Difference::Changed(SlightMutation { original_value: a, modified_value: b }))
 }
 
-fn string_differences(n: String, m: String) -> Vec<Difference> {
+fn primitive_difference(n: Value, m: Value) -> Vec<Difference> {
     if n != m {
         vec![Difference::Changed(SlightMutation {
-            original_value: Value::String(n),
-            modified_value: Value::String(m),
-        })]
-    } else {
-        Vec::new()
-    }
-}
-
-fn number_difference(n: Number, m: Number) -> Vec<Difference> {
-    if n != m {
-        vec![Difference::Changed(SlightMutation {
-            original_value: Value::Number(n),
-            modified_value: Value::Number(m),
+            original_value: n,
+            modified_value: m,
         })]
     } else {
         Vec::new()
@@ -76,7 +66,7 @@ pub fn object_difference(
         match (left.remove(&k), right.remove(&k)) {
             (Some(v), Some(w)) => differences.append(&mut calculate(v, w)),
             (Some(v), None) => differences.push(Difference::Removed(object_with(k, v))),
-            (None, Some(w)) => differences.push(Difference::Added(object_with(k,w))),
+            (None, Some(w)) => differences.push(Difference::Added(object_with(k, w))),
             _ => unreachable!(
                 "Looks like a key was unexpectedly neither in the left object nor in the right?"
             ),
@@ -116,6 +106,18 @@ mod tests {
 
     use super::*;
 
+
+    #[test]
+    fn null_is_not_different_from_itself() {
+        let left_value: Value = json!(null);
+        let right_value: Value = json!(null);
+
+        let difference = calculate(left_value, right_value);
+        let empty: Vec<Difference> = Vec::new();
+
+        assert_eq!( empty, difference )
+    }
+
     #[test]
     fn difference_between_numbers() {
         let left_value: Value = json!(1);
@@ -130,6 +132,33 @@ mod tests {
             })),
             difference
         )
+    }
+
+    #[test]
+    fn difference_between_booleans() {
+        let left_value: Value = json!(true);
+        let right_value: Value = json!(false);
+
+        let difference = calculate(left_value, right_value);
+
+        assert_eq!(
+            vec!(Difference::Changed(SlightMutation {
+                original_value: json!(true),
+                modified_value: json!(false),
+            })),
+            difference
+        )
+    }
+
+    #[test]
+    fn same_boolean_value() {
+        let left_value: Value = json!(true);
+        let right_value: Value = json!(true);
+
+        let difference = calculate(left_value, right_value);
+        let empty: Vec<Difference> = Vec::new();
+
+        assert_eq!(empty, difference)
     }
 
     #[test]
@@ -190,6 +219,19 @@ mod tests {
 
         assert_eq!(
             vec!(Difference::Removed(json!({"b": "bar"}))),
+            difference
+        )
+    }
+
+    #[test]
+    fn object_with_value_compared_with_null() {
+        let left_value: Value = json!({"a": "foo"});
+        let right_value: Value = json!({"a": null});
+
+        let difference = calculate(left_value, right_value);
+
+        assert_eq!(
+            vec!(Difference::Changed(SlightMutation { original_value: json!("foo"), modified_value: json!(null) })),
             difference
         )
     }
