@@ -1,6 +1,4 @@
-use std::cmp::Ordering;
-
-use serde_json::{Map, Value, Number};
+use serde_json::{Map, Value};
 use std::collections::HashSet;
 
 #[derive(Debug, PartialEq)]
@@ -20,10 +18,10 @@ pub fn calculate(left: Value, right: Value) -> Vec<Difference> {
     use Value::*;
 
     match (left, right) {
-        (Null, Null) => Vec::new(),
-        (n @ Bool(_), m @ Bool(_)) => primitive_difference(n, m),
-        (n @ Number(_), m @ Number(_)) => primitive_difference(n, m),
-        (n @ String(_), m @ String(_)) => primitive_difference(n, m),
+        (n @ Null, m @ Null)
+        | (n @ Bool(_), m @ Bool(_))
+        | (n @ Number(_), m @ Number(_))
+        | (n @ String(_), m @ String(_)) => primitive_difference(n, m),
         (Object(l), Object(r)) => object_difference(l, r),
         (Array(l), Array(r)) => array_difference(l, r),
         (a, b) => type_difference(a, b),
@@ -31,7 +29,10 @@ pub fn calculate(left: Value, right: Value) -> Vec<Difference> {
 }
 
 fn type_difference(a: Value, b: Value) -> Vec<Difference> {
-    vec!(Difference::Changed(SlightMutation { original_value: a, modified_value: b }))
+    vec![Difference::Changed(SlightMutation {
+        original_value: a,
+        modified_value: b,
+    })]
 }
 
 fn primitive_difference(n: Value, m: Value) -> Vec<Difference> {
@@ -44,7 +45,6 @@ fn primitive_difference(n: Value, m: Value) -> Vec<Difference> {
         Vec::new()
     }
 }
-
 
 pub fn object_difference(
     mut left: Map<String, Value>,
@@ -82,7 +82,7 @@ fn object_with(key: String, value: Value) -> Value {
     Value::Object(the_object)
 }
 
-pub fn array_difference(mut left_vals: Vec<Value>, mut right_vals: Vec<Value>) -> Vec<Difference> {
+pub fn array_difference(left_vals: Vec<Value>, right_vals: Vec<Value>) -> Vec<Difference> {
     let mut l_iter = left_vals.into_iter();
     let mut r_iter = right_vals.into_iter();
 
@@ -106,7 +106,6 @@ mod tests {
 
     use super::*;
 
-
     #[test]
     fn null_is_not_different_from_itself() {
         let left_value: Value = json!(null);
@@ -115,7 +114,7 @@ mod tests {
         let difference = calculate(left_value, right_value);
         let empty: Vec<Difference> = Vec::new();
 
-        assert_eq!( empty, difference )
+        assert_eq!(empty, difference)
     }
 
     #[test]
@@ -172,7 +171,7 @@ mod tests {
     }
 
     #[test]
-    fn array_with_surpluss_value() {
+    fn array_with_surplus_value() {
         let left_value: Value = json!([1, 2]);
         let right_value: Value = json!([1, 2, 3]);
 
@@ -204,10 +203,7 @@ mod tests {
 
         let difference = calculate(left_value, right_value);
 
-        assert_eq!(
-            vec!(Difference::Added(json!({"b": "bar"}))),
-            difference
-        )
+        assert_eq!(vec!(Difference::Added(json!({"b": "bar"}))), difference)
     }
 
     #[test]
@@ -217,21 +213,21 @@ mod tests {
 
         let difference = calculate(left_value, right_value);
 
-        assert_eq!(
-            vec!(Difference::Removed(json!({"b": "bar"}))),
-            difference
-        )
+        assert_eq!(vec!(Difference::Removed(json!({"b": "bar"}))), difference)
     }
 
     #[test]
     fn object_with_value_compared_with_null() {
         let left_value: Value = json!({"a": "foo"});
-        let right_value: Value = json!({"a": null});
+        let right_value: Value = json!({ "a": null });
 
         let difference = calculate(left_value, right_value);
 
         assert_eq!(
-            vec!(Difference::Changed(SlightMutation { original_value: json!("foo"), modified_value: json!(null) })),
+            vec!(Difference::Changed(SlightMutation {
+                original_value: json!("foo"),
+                modified_value: json!(null),
+            })),
             difference
         )
     }
