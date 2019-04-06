@@ -18,13 +18,13 @@ pub fn calculate(left: Value, right: Value) -> Vec<Difference> {
     use Value::*;
 
     match (left, right) {
-        (n @ Null, m @ Null)
-        | (n @ Bool(_), m @ Bool(_))
-        | (n @ Number(_), m @ Number(_))
-        | (n @ String(_), m @ String(_)) => primitive_difference(n, m),
+        (l @ Null, r @ Null)
+        | (l @ Bool(_), r @ Bool(_))
+        | (l @ Number(_), r @ Number(_))
+        | (l @ String(_), r @ String(_)) => primitive_difference(l, r),
         (Object(l), Object(r)) => object_difference(l, r),
         (Array(l), Array(r)) => array_difference(l, r),
-        (a, b) => type_difference(a, b),
+        (l, r) => type_difference(l, r),
     }
 }
 

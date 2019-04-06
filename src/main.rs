@@ -49,16 +49,13 @@ fn main() -> std::result::Result<(), serde_json::error::Error> {
 	}
     "#;
 
-    // Parse the string of left_data into serde_json::Value.
     let left_value: Value = serde_json::from_str(left_data)?;
     let right_value: Value = serde_json::from_str(right_data)?;
 
 
-    let diffrences = crate::diff::calculate(left_value, right_value);
+    let differences = crate::diff::calculate(left_value, right_value);
 
-    println!("{:#?}", diffrences);
-
-    // Access parts of the left_data by indexing with square brackets.
+    println!("{:#?}", differences);
 
     Ok(())
 }
