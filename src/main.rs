@@ -1,4 +1,5 @@
 mod diff;
+mod printer;
 
 use serde_json::{Value, error::Error};
 use std::env;
