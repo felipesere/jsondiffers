@@ -8,6 +8,15 @@ pub enum Difference {
     Removed(Value),
 }
 
+impl Difference {
+    fn change(original: Value, modified: Value) -> Difference {
+        Difference::Changed(SlightMutation {
+            original_value: original,
+            modified_value: modified,
+        })
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct SlightMutation {
     original_value: Value,
@@ -29,22 +38,17 @@ pub fn calculate(left: Value, right: Value) -> Vec<Difference> {
 }
 
 fn type_difference(a: Value, b: Value) -> Vec<Difference> {
-    vec![Difference::Changed(SlightMutation {
-        original_value: a,
-        modified_value: b,
-    })]
+    vec![Difference::change(a, b)]
 }
 
 fn primitive_difference(n: Value, m: Value) -> Vec<Difference> {
     if n != m {
-        vec![Difference::Changed(SlightMutation {
-            original_value: n,
-            modified_value: m,
-        })]
+        vec![Difference::change(n, m)]
     } else {
         Vec::new()
     }
 }
+
 
 pub fn object_difference(
     mut left: Map<String, Value>,
@@ -67,7 +71,7 @@ pub fn object_difference(
             (Some(v), Some(w)) => differences.append(&mut calculate(v, w)),
             (Some(v), None) => differences.push(Difference::Removed(object_with(k, v))),
             (None, Some(w)) => differences.push(Difference::Added(object_with(k, w))),
-            _ => unreachable!(
+            (None, None) => unreachable!(
                 "Looks like a key was unexpectedly neither in the left object nor in the right?"
             ),
         }
@@ -125,10 +129,7 @@ mod tests {
         let difference = calculate(left_value, right_value);
 
         assert_eq!(
-            vec!(Difference::Changed(SlightMutation {
-                original_value: json!(1),
-                modified_value: json!(2),
-            })),
+            vec!(Difference::change(json!(1), json!(2))),
             difference
         )
     }
@@ -141,10 +142,7 @@ mod tests {
         let difference = calculate(left_value, right_value);
 
         assert_eq!(
-            vec!(Difference::Changed(SlightMutation {
-                original_value: json!(true),
-                modified_value: json!(false),
-            })),
+            vec!(Difference::change(json!(true), json!(false))),
             difference
         )
     }
@@ -188,10 +186,7 @@ mod tests {
         let difference = calculate(left_value, right_value);
 
         assert_eq!(
-            vec!(Difference::Changed(SlightMutation {
-                original_value: json!("foo"),
-                modified_value: json!("bar"),
-            })),
+            vec!(Difference::change(json!("foo"), json!("bar"))),
             difference
         )
     }
@@ -224,10 +219,7 @@ mod tests {
         let difference = calculate(left_value, right_value);
 
         assert_eq!(
-            vec!(Difference::Changed(SlightMutation {
-                original_value: json!("foo"),
-                modified_value: json!(null),
-            })),
+            vec!(Difference::change(json!("foo"), json!(null))),
             difference
         )
     }
