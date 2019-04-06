@@ -1,9 +1,11 @@
-use serde_json::Value;
+mod diff;
+
+use serde_json::{Value, error::Error};
 use std::env;
 use std::fs::File;
 use std::io::Read;
+use std::result::Result;
 
-mod diff;
 
 fn json_in_file(file: &str) -> Value {
     let mut buffer = Vec::new();
@@ -12,7 +14,7 @@ fn json_in_file(file: &str) -> Value {
     serde_json::from_slice(buffer.as_slice()).expect("Could not read JSON from file")
 }
 
-fn main() -> std::result::Result<(), serde_json::error::Error> {
+fn main() -> Result<(), Error> {
     let arguments: Vec<String> = env::args().skip(1).collect();
 
     if arguments.len() == 2 {
