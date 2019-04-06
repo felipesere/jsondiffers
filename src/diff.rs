@@ -97,9 +97,6 @@ fn object_with(key: String, value: Value) -> Value {
 }
 
 pub fn array_difference(mut left_vals: Vec<Value>, mut right_vals: Vec<Value>) -> Vec<Difference> {
-    left_vals.sort_by(values);
-    right_vals.sort_by(values);
-
     let mut l_iter = left_vals.into_iter();
     let mut r_iter = right_vals.into_iter();
 
@@ -114,18 +111,6 @@ pub fn array_difference(mut left_vals: Vec<Value>, mut right_vals: Vec<Value>) -
     }
 
     differences
-}
-
-fn values(a: &Value, b: &Value) -> Ordering {
-    match (a, b) {
-        (Value::Number(n), Value::Number(m)) => compare_numbers(n, m),
-        (Value::Null, Value::Null) => Ordering::Equal,
-        (Value::Bool(a), Value::Bool(b)) => a.cmp(b),
-        (Value::String(a), Value::String(b)) => a.cmp(b),
-        (Value::Array(a), Value::Array(b)) => a.len().cmp(&b.len()), // todo
-        (Value::Object(a), Value::Object(b)) => a.len().cmp(&b.len()), // todo
-        (_, _) => Ordering::Less,                                    // Todo
-    }
 }
 
 #[cfg(test)]
