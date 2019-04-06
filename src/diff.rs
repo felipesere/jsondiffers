@@ -33,7 +33,7 @@ pub fn calculate(left: Value, right: Value) -> Vec<Difference> {
             array_difference(left_vals, right_vals)
         }
         (Value::String(a), Value::String(b)) => string_differences(a, b),
-        (a, b) => type_difference(a,b),
+        (a, b) => vec!(Difference::Changed(SlightMutation{original_value: a, modified_value: b})),
         _ => Vec::new(),
     }
 }
@@ -79,8 +79,8 @@ pub fn object_difference(
     for k in all_keys {
         match (left.remove(&k), right.remove(&k)) {
             (Some(v), Some(w)) => differences.append(&mut calculate(v, w)),
-            (Some(v), None) => differences.push(Difference::Removed(v)),
-            (None, Some(w)) => differences.push(Difference::Added(w)),
+            (Some(v), None) => differences.push(Difference::Removed(object_with(k, v))),
+            (None, Some(w)) => differences.push(Difference::Added(object_with(k,w))),
             _ => unreachable!(
                 "Looks like a key was unexpectedly neither in the left object nor in the right?"
             ),
@@ -88,6 +88,12 @@ pub fn object_difference(
     }
 
     differences
+}
+
+fn object_with(key: String, value: Value) -> Value {
+    let mut the_object = serde_json::Map::new();
+    the_object.insert(key, value);
+    Value::Object(the_object)
 }
 
 pub fn array_difference(mut left_vals: Vec<Value>, mut right_vals: Vec<Value>) -> Vec<Difference> {
@@ -190,6 +196,19 @@ mod tests {
 
         assert_eq!(
             vec!(Difference::Added(json!({"b": "bar"}))),
+            difference
+        )
+    }
+
+    #[test]
+    fn second_object_has_missing_elements() {
+        let left_value: Value = json!({"a": "foo", "b": "bar"});
+        let right_value: Value = json!({"a": "foo"});
+
+        let difference = calculate(left_value, right_value);
+
+        assert_eq!(
+            vec!(Difference::Removed(json!({"b": "bar"}))),
             difference
         )
     }
